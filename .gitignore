@@ -1,3 +1,6 @@
+distiller/
+envs/
+
 .vscode
 *.pyc
 .DS_Store
@@ -6,3 +9,5 @@
 *.sess
 *.data
 runs/
+output/
+save/
