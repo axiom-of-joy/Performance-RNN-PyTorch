@@ -12,3 +12,6 @@ distiller/
 *.sess
 *.data
 runs/
+save/
+logs/
+output/
