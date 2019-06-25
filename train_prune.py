@@ -288,8 +288,9 @@ try:
             controls = None
 
         # Distiller Begin.
+        # Changed 'epoch' in docs to 'iteration'.
         if compression_scheduler:
-            compression_scheduler.on_minibatch_begin(epoch, minibatch_id=batch, minibatches_per_epoch=steps_per_epoch)
+            compression_scheduler.on_minibatch_begin(iteration, minibatch_id=batch, minibatches_per_epoch=steps_per_epoch)
         # Distiller End.
 
         init = torch.randn(batch_size, model.init_dim).to(device)
@@ -300,8 +301,9 @@ try:
         loss = loss_function(outputs.view(-1, event_dim), events.view(-1))
 
         # Distiller Begin.
+        # Changed 'epoch' in docs to 'iteration'.
         if compression_scheduler:
-            compression_scheduler.before_backward_pass(epoch, minibatch_id=batch,
+            compression_scheduler.before_backward_pass(iteration, minibatch_id=batch,
                                                        minibatches_per_epoch=steps_per_epoch,
                                                        loss=loss)
         # Distiller End.
