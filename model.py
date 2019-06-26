@@ -33,6 +33,7 @@ class PerformanceRNN(nn.Module):
         self.concat_input_fc = nn.Linear(self.concat_dim, self.input_dim)
         self.concat_input_fc_activation = nn.LeakyReLU(0.1, inplace=True)
 
+        # Changed.
         self.gru = nn.LSTM(self.input_dim, self.hidden_dim,
                           num_layers=gru_layers, dropout=gru_dropout)
         self.output_fc = nn.Linear(hidden_dim * gru_layers, self.output_dim)
@@ -56,7 +57,8 @@ class PerformanceRNN(nn.Module):
             probs = self.output_fc_activation(output)
             return Categorical(probs).sample()
 
-    def forward(self, event, control=None, hidden=None):
+    # Changed.
+    def forward(self, event, control=None, hidden=None, cell=None):
         # One step forward
 
         assert len(event.shape) == 2
@@ -75,11 +77,12 @@ class PerformanceRNN(nn.Module):
         input = self.concat_input_fc(concat)
         input = self.concat_input_fc_activation(input)
 
-        _, hidden = self.gru(input, hidden)
+        # Changed.
+        _, (hidden, cell) = self.gru(input, (hidden, cell))
         output = hidden.permute(1, 0, 2).contiguous()
         output = output.view(batch_size, -1).unsqueeze(0)
         output = self.output_fc(output)
-        return output, hidden
+        return output, hidden, cell
     
     def get_primary_event(self, batch_size):
         return torch.LongTensor([[self.primary_event] * batch_size]).to(device)
@@ -91,6 +94,16 @@ class PerformanceRNN(nn.Module):
         out = self.inithid_fc_activation(out)
         out = out.view(self.gru_layers, batch_size, self.hidden_dim)
         return out
+
+    # Distiller Begin
+    def init_to_cell(self, init):
+        # [batch_size, init_dim]
+        batch_size = init.shape[0]
+        out = self.inithid_fc(init)
+        out = self.inithid_fc_activation(out)
+        out = out.view(self.gru_layers, batch_size, self.hidden_dim)
+        return out
+    # Distiller End
     
     def expand_controls(self, controls, steps):
         # [1 or steps, batch_size, control_dim]
@@ -122,6 +135,10 @@ class PerformanceRNN(nn.Module):
         if use_control:
             controls = self.expand_controls(controls, steps)
         hidden = self.init_to_hidden(init)
+        
+        # Distiller Begin
+        cell = self.init_to_cell(init)
+        # Distiller End
 
         outputs = []
         step_iter = range(steps)
@@ -130,7 +147,8 @@ class PerformanceRNN(nn.Module):
 
         for step in step_iter:
             control = controls[step].unsqueeze(0) if use_control else None
-            output, hidden = self.forward(event, control, hidden)
+            # Changed.
+            output, hidden, cell = self.forward(event, control, hidden, cell)
 
             use_greedy = np.random.random() < greedy
             event = self._sample_event(output, greedy=use_greedy,
@@ -166,6 +184,10 @@ class PerformanceRNN(nn.Module):
         hidden = hidden.unsqueeze(2).repeat(1, 1, beam_size, 1)
         # [gru_layers, batch_size, beam_size, hidden_dim]
 
+        # Distiller Begin
+        cell = self.init_to_cell(init)
+        # Distiller End
+
         event = self.get_primary_event(batch_size)
         event = event.unsqueeze(-1).repeat(1, 1, beam_size)
         # [1, batch_size, beam_size]
@@ -189,7 +211,8 @@ class PerformanceRNN(nn.Module):
             event = event.view(1, batch_size * beam_size)
             hidden = hidden.view(self.gru_layers, batch_size * beam_size, self.hidden_dim)
 
-            output, hidden = self.forward(event, control, hidden)
+            # Changed.
+            output, hidden, cell = self.forward(event, control, hidden, cell)
             output = self.output_fc_activation(output / temperature)
 
             output = output.view(1, batch_size, beam_size, self.event_dim)
