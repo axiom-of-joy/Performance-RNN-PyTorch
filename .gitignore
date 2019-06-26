@@ -1,6 +1,8 @@
 distiller/
 envs/
 
+.ipynb_checkpoints/
+
 .vscode
 *.pyc
 .DS_Store
