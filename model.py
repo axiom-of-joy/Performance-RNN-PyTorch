@@ -102,6 +102,7 @@ class PerformanceRNN(nn.Module):
         return controls.repeat(steps, 1, 1)
     
     def generate(self, init, steps, events=None, controls=None, greedy=1.0,
+                 user_events=None,  # I added this argument.
                  temperature=1.0, teacher_forcing_ratio=1.0, output_type='index', verbose=False):
         # init [batch_size, init_dim]
         # events [steps, batch_size] indeces
@@ -128,8 +129,23 @@ class PerformanceRNN(nn.Module):
         if verbose:
             step_iter = Bar('Generating').iter(step_iter)
 
+        # I added this stuff.
+        if user_events is not None:
+            user_events = torch.LongTensor(user_events).to(device)
+            #import pdb
+            #pdb.set_trace()
+            control = None
+            for i in range(user_events.shape[0]):
+                user_event = user_events[i].unsqueeze(0).unsqueeze(0)
+                output, hidden = self.forward(user_event, control, hidden)
+        # 
+
         for step in step_iter:
             control = controls[step].unsqueeze(0) if use_control else None
+            #FIXME
+            #import pdb
+            #pdb.set_trace()
+            #
             output, hidden = self.forward(event, control, hidden)
 
             use_greedy = np.random.random() < greedy

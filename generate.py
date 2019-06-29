@@ -89,15 +89,17 @@ import preprocess
 input_midi_file = opt.input_midi_file
 if input_midi_file is not None:
     assert os.path.isfile(input_midi_file), f'"{input_midi_file}" is not a file'
-    events, control_ = preprocess.preprocess_midi(input_midi_file)
+    user_events, user_control = preprocess.preprocess_midi(input_midi_file)
 
-    print(events.shape)
-    print(control_.shape)
-    print(type(events))
-    print(type(control_))
+    print(user_events.shape)
+    print(user_control.shape)
+    print(type(user_events))
+    print(type(user_control))
 
     print(input_midi_file)
-
+else:
+    user_events = None
+    user_control = None
 # Distiller End.
 
 #------------------------------------------------------------------------
@@ -198,6 +200,7 @@ with torch.no_grad():
     else:
         outputs = model.generate(init, max_len,
                                 controls=controls,
+                                user_events=user_events if user_events is not None else None,   # Added.
                                 greedy=greedy_ratio,
                                 temperature=temperature,
                                 verbose=True)
@@ -213,8 +216,8 @@ os.makedirs(output_dir, exist_ok=True)
 
 for i, output in enumerate(outputs):
     # FIXME
-    import pdb
-    pdb.set_trace()
+    #import pdb
+    #pdb.set_trace()
     # FIXME
     name = f'output-{i:03d}.mid'
     path = os.path.join(output_dir, name)
