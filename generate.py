@@ -68,11 +68,37 @@ def getopt():
                       dest='init_zero',
                       action='store_true',
                       default=False)
+    
+    # Distiller Begin.
+    parser.add_option('-i', '--input-midi-file',
+                      dest='input_midi_file',
+                      type='string',
+                      default=None,
+                      help='path to MIDI file containing user input')
+    # Distiller End.
 
     return parser.parse_args()[0]
 
 
 opt = getopt()
+
+
+# Distiller Begin.
+import preprocess
+
+input_midi_file = opt.input_midi_file
+if input_midi_file is not None:
+    assert os.path.isfile(input_midi_file), f'"{input_midi_file}" is not a file'
+    events, control_ = preprocess.preprocess_midi(input_midi_file)
+
+    print(events.shape)
+    print(control_.shape)
+    print(type(events))
+    print(type(control_))
+
+    print(input_midi_file)
+
+# Distiller End.
 
 #------------------------------------------------------------------------
 
@@ -186,6 +212,10 @@ outputs = outputs.cpu().numpy().T # [batch, steps]
 os.makedirs(output_dir, exist_ok=True)
 
 for i, output in enumerate(outputs):
+    # FIXME
+    import pdb
+    pdb.set_trace()
+    # FIXME
     name = f'output-{i:03d}.mid'
     path = os.path.join(output_dir, name)
     n_notes = utils.event_indeces_to_midi_file(output, path)

@@ -149,6 +149,8 @@ class PerformanceRNN(nn.Module):
                 if np.random.random() <= teacher_forcing_ratio:
                     event = events[step].unsqueeze(0)
         
+        # FIXME
+        print(type(outputs[0]))
         return torch.cat(outputs, 0)
 
     def beam_search(self, init, steps, beam_size, controls=None,
