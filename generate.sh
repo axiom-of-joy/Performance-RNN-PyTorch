@@ -3,4 +3,4 @@ python3 generate.py \
 -l 1000 \
 -b 1 \
 -g 0.7 \
--i input/trimmed_sun01.mid
+-i input/trimmed_giltburg01.mid
