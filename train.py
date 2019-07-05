@@ -198,6 +198,18 @@ def save_model():
     print('Done saving')
 
 
+# Added.
+def save_model_(i):
+    global model, optimizer, model_config, sess_path
+    print('Saving to', sess_path)
+    torch.save({'model_config': model_config,
+                'model_state': model.state_dict(),
+                'model_optimizer_state': optimizer.state_dict()}, sess_path)
+    print('Done saving')
+#
+
+
+
 #========================================================================
 # Training
 #========================================================================
