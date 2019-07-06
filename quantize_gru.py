@@ -60,6 +60,7 @@ for i, output in enumerate(outputs):
 
 # Collect quantization statistics.
 
+def test_quantization_stats_collection():
 import utils
 from distiller.data_loggers import QuantCalibrationStatsCollector, collector_context
 
