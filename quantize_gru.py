@@ -1,3 +1,6 @@
+import pudb
+pudb.pm()
+
 from model import PerformanceRNN
 import torch
 from torch import nn
@@ -41,11 +44,8 @@ with torch.no_grad():
 outputs = outputs.cpu().numpy().T # [batch, steps]
 
 ## Save
-
-
-import utils
 import os
-
+import utils
 output_dir = "quantized_output/"
 os.makedirs(output_dir, exist_ok=True)
 
@@ -54,3 +54,40 @@ for i, output in enumerate(outputs):
     path = os.path.join(output_dir, name)
     n_notes = utils.event_indeces_to_midi_file(output, path)
     print(f'===> {path} ({n_notes} notes)')
+
+
+
+
+# Collect quantization statistics.
+
+import utils
+from distiller.data_loggers import QuantCalibrationStatsCollector, collector_context
+
+# Commented line is probably not necessary.
+distiller.utils.assign_layer_fq_names(rnn_model)
+collector = QuantCalibrationStatsCollector(rnn_model)
+
+# Random numbers.
+batch_size = 64
+max_len = 100
+
+if not os.path.isfile('performance_rnn_pretrained_stats.yaml'):
+    with collector_context(collector) as collector:
+        init = torch.randn(batch_size, rnn_model.init_dim).to(device)
+        output = rnn_model.generate(init, max_len)
+        collector.save('performance_rnn_pretrained_stats.yaml')
+
+# Quantize model.
+
+from distiller.quantization import PostTrainLinearQuantizer, LinearQuantMode
+from copy import deepcopy
+# Define the quantizer
+quantizer = PostTrainLinearQuantizer(
+    deepcopy(rnn_model),
+    model_activation_stats='performance_rnn_pretrained_stats.yaml')
+
+#import pudb
+#pudb.set_trace()
+def test_quantizer():
+    quantizer.prepare_model()
+
