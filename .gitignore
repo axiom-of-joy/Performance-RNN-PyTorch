@@ -11,3 +11,4 @@ distiller/
 *.sess
 *.data
 runs/
+dataset/
