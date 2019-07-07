@@ -2,6 +2,7 @@ distiller/
 envs/
 
 .ipynb_checkpoints/
+.pytest_cache/
 
 .vscode
 *.pyc
