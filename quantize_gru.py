@@ -1,5 +1,5 @@
 import pudb
-pudb.pm()
+pudb
 
 from model import PerformanceRNN
 import torch
@@ -61,34 +61,34 @@ for i, output in enumerate(outputs):
 # Collect quantization statistics.
 
 def test_quantization_stats_collection():
-import utils
-from distiller.data_loggers import QuantCalibrationStatsCollector, collector_context
+    import utils
+    from distiller.data_loggers import QuantCalibrationStatsCollector, collector_context
 
-# Commented line is probably not necessary.
-distiller.utils.assign_layer_fq_names(rnn_model)
-collector = QuantCalibrationStatsCollector(rnn_model)
+    distiller.utils.assign_layer_fq_names(rnn_model)
+    collector = QuantCalibrationStatsCollector(rnn_model,
+                                               inplace_runtime_check=True)
 
-# Random numbers.
-batch_size = 64
-max_len = 100
+    # Random numbers.
+    batch_size = 64
+    max_len = 100
 
-if not os.path.isfile('performance_rnn_pretrained_stats.yaml'):
-    with collector_context(collector) as collector:
-        init = torch.randn(batch_size, rnn_model.init_dim).to(device)
-        output = rnn_model.generate(init, max_len)
-        collector.save('performance_rnn_pretrained_stats.yaml')
+    if not os.path.isfile('performance_rnn_pretrained_stats.yaml'):
+        with collector_context(collector) as collector:
+            init = torch.randn(batch_size, rnn_model.init_dim).to(device)
+            output = rnn_model.generate(init, max_len)
+            collector.save('performance_rnn_pretrained_stats.yaml')
 
-# Quantize model.
-
-from distiller.quantization import PostTrainLinearQuantizer, LinearQuantMode
-from copy import deepcopy
-# Define the quantizer
-quantizer = PostTrainLinearQuantizer(
-    deepcopy(rnn_model),
-    model_activation_stats='performance_rnn_pretrained_stats.yaml')
-
-#import pudb
-#pudb.set_trace()
-def test_quantizer():
-    quantizer.prepare_model()
-
+## Quantize model.
+#
+#from distiller.quantization import PostTrainLinearQuantizer, LinearQuantMode
+#from copy import deepcopy
+## Define the quantizer
+#quantizer = PostTrainLinearQuantizer(
+#    deepcopy(rnn_model),
+#    model_activation_stats='performance_rnn_pretrained_stats.yaml')
+#
+##import pudb
+##pudb.set_trace()
+#def _test_quantizer():
+#    quantizer.prepare_model()
+#
