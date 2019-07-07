@@ -23,49 +23,55 @@ from distiller.quantization import PostTrainLinearQuantizer, LinearQuantMode
 from copy import deepcopy
 
 
-#-----------------------------------------------------------------------
-# Settings.
-#-----------------------------------------------------------------------
-
-def getopt():
-    parser = optparse.OptionParser()
-
-    parser.add_option('-b', '--batch-size',
-                      dest='batch_size',
-                      type='int',
-                      default=8)
-
-    parser.add_option('-s', '--session',
-                      dest='sess_path',
-                      type='string',
-                      default='save/train.sess',
-                      help='session file containing the trained model')
-
-    parser.add_option('-z', '--init-zero',
-                      dest='init_zero',
-                      action='store_true',
-                      default=False)
-    
-    parser.add_option('-n', '--num-batches',
-                      dest='num_batches',
-                      type='int',
-                      default=10,
-                      help='number of batches for pre-quantization statistics')
-
-    return parser.parse_args()[0]
-
-
-#-----------------------------------------------------------------------
-# Parse command line arguments.
-#-----------------------------------------------------------------------
-
-opt = getopt()
-stats_file = opt.stats_file
-num_batches = opt.num_batches
-batch_size = opt.batch_size
-sess_path = opt.sess_path
-init_zero = opt.init_zero
-
+##-----------------------------------------------------------------------
+## Settings.
+##-----------------------------------------------------------------------
+#
+#def getopt():
+#    parser = optparse.OptionParser()
+#
+#    parser.add_option('-b', '--batch-size',
+#                      dest='batch_size',
+#                      type='int',
+#                      default=8)
+#
+#    parser.add_option('-s', '--session',
+#                      dest='sess_path',
+#                      type='string',
+#                      default='save/train.sess',
+#                      help='session file containing the trained model')
+#
+#    parser.add_option('-z', '--init-zero',
+#                      dest='init_zero',
+#                      action='store_true',
+#                      default=False)
+#    
+#    parser.add_option('-n', '--num-batches',
+#                      dest='num_batches',
+#                      type='int',
+#                      default=10,
+#                      help='number of batches for pre-quantization statistics')
+#
+#    parser.add_option('-q', '--stats-file',
+#                      dest='stats_file',
+#                      type='str',
+#                      default=None,
+#                      help='path to prequantization statistics file')
+#
+#    return parser.parse_args()[0]
+#
+#
+##-----------------------------------------------------------------------
+## Parse command line arguments.
+##-----------------------------------------------------------------------
+#
+#opt = getopt()
+#stats_file = opt.stats_file
+#num_batches = opt.num_batches
+#batch_size = opt.batch_size
+#sess_path = opt.sess_path
+#init_zero = opt.init_zero
+#
 
 #-----------------------------------------------------------------------
 # Quantizer class.
@@ -156,7 +162,7 @@ class Quantizer:
         """
         overrides = distiller.utils.yaml_ordered_load(overrides_yaml)
         quantizer = PostTrainLinearQuantizer(
-            deepcopy(rnn_model),
+            deepcopy(self.model),
             model_activation_stats=stats_file,
             overrides=overrides,
             mode=LinearQuantMode.ASYMMETRIC_SIGNED,
@@ -164,88 +170,12 @@ class Quantizer:
         )
 
         quantizer.prepare_model()
+        quantizer.model.eval()
         return quantizer
 
+def main():
+    print("hello world")
 
-assert torch.cuda.is_available()
-device = 'cuda:0'
-sess_path = "save/ecomp_w500.sess"
-state = torch.load(sess_path)
-rnn_model = PerformanceRNN(**state['model_config']).to(device)
-rnn_model.load_state_dict(state['model_state'])
-
-rnn_model = convert_model_to_distiller_gru(rnn_model)
-
-
-
-### Quantize the model.
-
-# Define the quantizer
-overrides_yaml = """
-.*eltwise.*:
-    fp16: true
-output_fc_activation:
-    fp16: true
-"""
-overrides = distiller.utils.yaml_ordered_load(overrides_yaml)
-quantizer = PostTrainLinearQuantizer(
-    deepcopy(rnn_model),
-    model_activation_stats='performance_rnn_pretrained_stats.yaml',
-    overrides=overrides,
-    mode=LinearQuantMode.ASYMMETRIC_SIGNED,
-    per_channel_wts=True
-)
-
-# Quantizer magic:
-
-quantizer.prepare_model()
-
-
-
-### Collect pre-quantization statistics.
-
-data_path = "dataset/processed/ecomp_piano"
-dataset = Dataset(data_path, verbose=True)
-dataset_size = len(dataset.samples)
-assert dataset_size > 0
-
-# Eventually need to put these in YAML file.
-controls = None
-teacher_forcing_ratio = 1.0
-loss_function = nn.CrossEntropyLoss()
-log_softmax = nn.LogSoftmax(dim=1)
-nnl = nn.NLLLoss(reduction='sum')
-
-
-
-
-window_size = 200
-stride_size = 10
-use_transposition = False
-control_ratio = 1.0
-event_dim = EventSeq.dim()
-batch_size = 2
-
-batch_gen = dataset.batches(batch_size, window_size, stride_size)
-
-
-model = rnn_model #quantizer.model.to(device)
-model.eval()
-
-
-mport numpy.testing as nptest
-import pdb
-import os
-from distiller.data_loggers import QuantCalibrationStatsCollector, collector_context
-
-acc_loss = 0
-N = 0
-num_iters = 100
-
-# Collect stats.
-distiller.utils.assign_layer_fq_names(rnn_model)
-collector = QuantCalibrationStatsCollector(rnn_model)
-                                           #inplace_runtime_check=True)
-
-
+if __name__ == "__main__":
+    main()
 

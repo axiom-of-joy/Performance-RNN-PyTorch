@@ -23,3 +23,12 @@ train = {
     'control_ratio': 1.0,
     'teacher_forcing_ratio': 1.0
 }
+
+collect_quant_stats = {
+    'batch_size': 8,
+    'window_size': 200,
+    'stride_size': 10,
+    'use_transposition': False,
+    'control_ratio': 1.0,
+    'teacher_forcing_ratio': 1.0
+}
