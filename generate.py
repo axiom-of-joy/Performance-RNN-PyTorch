@@ -6,6 +6,7 @@ import config, utils
 from config import device, model as model_config
 from model import PerformanceRNN
 from sequence import EventSeq, Control, ControlSeq
+from quantize import Quantizer
 
 # pylint: disable=E1101,E1102
 
@@ -75,6 +76,12 @@ def getopt():
                       type='string',
                       default=None,
                       help='path to MIDI file containing user input')
+
+    parser.add_option('-q', '--stats-file',
+                      dest='stats_file',
+                      type='string',
+                      default=None,
+                      help='path to YAML file containing quantization stats')
     # Distiller End.
 
     return parser.parse_args()[0]
@@ -100,6 +107,9 @@ if input_midi_file is not None:
 else:
     user_events = None
     user_control = None
+
+stats_file = opt.stats_file
+use_quantization = stats_file is not None
 # Distiller End.
 
 #------------------------------------------------------------------------
@@ -182,6 +192,15 @@ print('-' * 70)
 state = torch.load(sess_path)
 model = PerformanceRNN(**state['model_config']).to(device)
 model.load_state_dict(state['model_state'])
+
+# Distiller begin.
+if use_quantization:
+    # Quantizer.model.
+    Q = Quantizer(model)
+    quantizer = Q.quantize(stats_file)
+    model = quantizer.model.to(device)
+# Distiller end.
+
 model.eval()
 print(model)
 print('-' * 70)
