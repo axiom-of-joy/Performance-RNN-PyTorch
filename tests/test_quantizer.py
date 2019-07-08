@@ -14,7 +14,8 @@ import pudb
 import pytest
 import torch
 from distiller.quantization.range_linear import PostTrainLinearQuantizer
-
+import config
+from data import Dataset
 
 
 def test_quantize():
@@ -40,7 +41,8 @@ def test_quantize():
 
 def test_quantizer_quant_stats_collect():
     '''
-    Tests Quantizer.quantize_method. This test uses specific 
+    Tests Quantizer.quantize_method. This test requires that
+    ecomp_w500.sess is saved in the save/ folder.
     '''
     
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -52,10 +54,17 @@ def test_quantizer_quant_stats_collect():
     rnn_model = PerformanceRNN(**state['model_config']).to(device)
     rnn_model.load_state_dict(state['model_state'])
 
+    # Load dataset.
+    data_path = "../dataset/processed/ecomp_piano"
+    dataset = Dataset(data_path)
+    dataset_size = len(dataset.samples)
+    assert dataset_size > 0
+
+    # Create quantizer and collect statistics.
     Q = Quantizer(rnn_model)
-    num_batches = 10
-    rnn_model.collect_stats(stats_file, batch_gen, num_batches):
-    
-
-
+    batch_size = config.collect_quant_stats['batch_size']
+    window_size = config.collect_quant_stats['window_size']
+    stride_size = config.collect_quant_stats['stride_size']
+    batch_gen = dataset.batches(batch_size, window_size, stride_size)    
+    Q.collect_stats(stats_file, batch_gen)
 

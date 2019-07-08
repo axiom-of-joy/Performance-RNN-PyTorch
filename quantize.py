@@ -21,57 +21,8 @@ from sequence import EventSeq
 import torch.functional as F
 from distiller.quantization import PostTrainLinearQuantizer, LinearQuantMode
 from copy import deepcopy
-
-
-##-----------------------------------------------------------------------
-## Settings.
-##-----------------------------------------------------------------------
-#
-#def getopt():
-#    parser = optparse.OptionParser()
-#
-#    parser.add_option('-b', '--batch-size',
-#                      dest='batch_size',
-#                      type='int',
-#                      default=8)
-#
-#    parser.add_option('-s', '--session',
-#                      dest='sess_path',
-#                      type='string',
-#                      default='save/train.sess',
-#                      help='session file containing the trained model')
-#
-#    parser.add_option('-z', '--init-zero',
-#                      dest='init_zero',
-#                      action='store_true',
-#                      default=False)
-#    
-#    parser.add_option('-n', '--num-batches',
-#                      dest='num_batches',
-#                      type='int',
-#                      default=10,
-#                      help='number of batches for pre-quantization statistics')
-#
-#    parser.add_option('-q', '--stats-file',
-#                      dest='stats_file',
-#                      type='str',
-#                      default=None,
-#                      help='path to prequantization statistics file')
-#
-#    return parser.parse_args()[0]
-#
-#
-##-----------------------------------------------------------------------
-## Parse command line arguments.
-##-----------------------------------------------------------------------
-#
-#opt = getopt()
-#stats_file = opt.stats_file
-#num_batches = opt.num_batches
-#batch_size = opt.batch_size
-#sess_path = opt.sess_path
-#init_zero = opt.init_zero
-#
+from distiller.data_loggers import QuantCalibrationStatsCollector
+from distiller.data_loggers import collector_context
 
 #-----------------------------------------------------------------------
 # Quantizer class.
@@ -79,10 +30,19 @@ from copy import deepcopy
 
 class Quantizer:
     def __init__(self, model: 'PerformanceRNN'):
-        self.model = model
+        self.model = deepcopy(model)
         convert_model_to_distiller_gru(self.model)
 
-    def collect_stats(self, stats_file, batch_gen, num_batches):
+        self.num_batches = config.collect_quant_stats['num_batches']
+        self.use_transposition = (
+            config.collect_quant_stats['use_transposition'])
+        self.window_size = config.collect_quant_stats['window_size']
+        self.teacher_forcing_ratio = (
+            config.collect_quant_stats['teacher_forcing_ratio'])
+        self.control_ratio = config.collect_quant_stats['control_ratio']
+        self.batch_size = config.collect_quant_stats['batch_size']
+
+    def collect_stats(self, stats_file, batch_gen):
         """
         Collects pre-quantization calibration statistics for the
         self.model.
@@ -95,45 +55,45 @@ class Quantizer:
             stats_file (str): Path to YAML file where statistics will be
                 written.
 
-            batch_gen (dataset.batches): Batch generator from dataset
-                file.
-
-            num_batches (int): Number of batches to use while computing
-                statistics.
+            batch_gen (dataset.batches): Batch generator from data file.
 
         Returns:
             None
         """
+        distiller.utils.assign_layer_fq_names(self.model)
+        collector = QuantCalibrationStatsCollector(self.model)
+        device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
         with collector_context(collector) as collector:
             for iteration, (events, controls) in enumerate(batch_gen):
                 print(iteration)
 
-                if iteration == num_batches:
+                if iteration == self.num_batches:
                     break
 
-                if use_transposition:
+                if self.use_transposition:
                     offset = np.random.choice(np.arange(-6, 6))
                     events, controls = utils.transposition(events, controls,
                                                            offset)
 
                 events = torch.LongTensor(events).to(device)
-                assert events.shape[0] == window_size
+                assert events.shape[0] == self.window_size
 
-                if np.random.random() < control_ratio:
+                if np.random.random() < self.control_ratio:
                     controls = torch.FloatTensor(controls).to(device)
-                    assert controls.shape[0] == window_size
+                    assert controls.shape[0] == self.window_size
                 else:
                     controls = None
 
-                init = torch.randn(batch_size, model.init_dim).to(device)
-                outputs = model.generate(
+                init = torch.randn(self.batch_size,
+                    self.model.init_dim).to(device)
+                outputs = self.model.generate(
                     init,
-                    window_size,
+                    self.window_size,
                     events=events[:-1],
                     controls=controls,
-                    teacher_forcing_ratio=teacher_forcing_ratio,
-                    output_type='logit')
+                    teacher_forcing_ratio=self.teacher_forcing_ratio,
+                    output_type='softmax')
 
 
                 assert outputs.shape[:2] == events.shape[:2]
@@ -151,9 +111,11 @@ class Quantizer:
                 pre-quantization statistics.
 
         Returns:
-            quantizer: Distiller quantizer object.
+            quantizer(PostTrainLinearQuantizer): Quantizer object with
+                quantized model stored at quantizer.model.
         """
 
+        # The following overrides the default quantization routine.
         overrides_yaml = """
         .*eltwise.*:
             fp16: true
@@ -162,7 +124,7 @@ class Quantizer:
         """
         overrides = distiller.utils.yaml_ordered_load(overrides_yaml)
         quantizer = PostTrainLinearQuantizer(
-            deepcopy(self.model),
+            self.model,
             model_activation_stats=stats_file,
             overrides=overrides,
             mode=LinearQuantMode.ASYMMETRIC_SIGNED,
@@ -170,12 +132,6 @@ class Quantizer:
         )
 
         quantizer.prepare_model()
-        quantizer.model.eval()
+        quantizer.model.eval()  # Disables dropout.
         return quantizer
-
-def main():
-    print("hello world")
-
-if __name__ == "__main__":
-    main()
 
