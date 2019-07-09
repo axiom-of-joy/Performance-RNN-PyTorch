@@ -6,6 +6,7 @@ import config, utils
 from config import device, model as model_config
 from model import PerformanceRNN
 from sequence import EventSeq, Control, ControlSeq
+from quantize import Quantizer
 
 # pylint: disable=E1101,E1102
 
@@ -68,11 +69,48 @@ def getopt():
                       dest='init_zero',
                       action='store_true',
                       default=False)
+    
+    # Distiller Begin.
+    parser.add_option('-i', '--input-midi-file',
+                      dest='input_midi_file',
+                      type='string',
+                      default=None,
+                      help='path to MIDI file containing user input')
+
+    parser.add_option('-q', '--stats-file',
+                      dest='stats_file',
+                      type='string',
+                      default=None,
+                      help='path to YAML file containing quantization stats')
+    # Distiller End.
 
     return parser.parse_args()[0]
 
 
 opt = getopt()
+
+
+# Distiller Begin.
+import preprocess
+
+input_midi_file = opt.input_midi_file
+if input_midi_file is not None:
+    assert os.path.isfile(input_midi_file), f'"{input_midi_file}" is not a file'
+    user_events, user_control = preprocess.preprocess_midi(input_midi_file)
+
+    print(user_events.shape)
+    print(user_control.shape)
+    print(type(user_events))
+    print(type(user_control))
+
+    print(input_midi_file)
+else:
+    user_events = None
+    user_control = None
+
+stats_file = opt.stats_file
+use_quantization = stats_file is not None
+# Distiller End.
 
 #------------------------------------------------------------------------
 
@@ -154,6 +192,15 @@ print('-' * 70)
 state = torch.load(sess_path)
 model = PerformanceRNN(**state['model_config']).to(device)
 model.load_state_dict(state['model_state'])
+
+# Distiller begin.
+if use_quantization:
+    # Quantizer.model.
+    Q = Quantizer(model)
+    quantizer = Q.quantize(stats_file)
+    model = quantizer.model.to(device)
+# Distiller end.
+
 model.eval()
 print(model)
 print('-' * 70)
@@ -172,6 +219,7 @@ with torch.no_grad():
     else:
         outputs = model.generate(init, max_len,
                                 controls=controls,
+                                user_events=user_events if user_events is not None else None,   # Added.
                                 greedy=greedy_ratio,
                                 temperature=temperature,
                                 verbose=True)
@@ -186,6 +234,10 @@ outputs = outputs.cpu().numpy().T # [batch, steps]
 os.makedirs(output_dir, exist_ok=True)
 
 for i, output in enumerate(outputs):
+    # FIXME
+    #import pdb
+    #pdb.set_trace()
+    # FIXME
     name = f'output-{i:03d}.mid'
     path = os.path.join(output_dir, name)
     n_notes = utils.event_indeces_to_midi_file(output, path)
