@@ -50,8 +50,7 @@ Performance RNN is designed to capture the nuances of human musical performance 
 - Velocity events, which control the volume at which a pitch is played,
 - Time events, which move forward in time to the next note event.
 
-
-
+![piano-roll](images/pianoroll.png)
 
 This representation of music has several advantages. First, it allows Performance RNN to model "polyphonic" music -- music in which more than one pitch is played at a single time. Second, it captures the nuances of musical performances, e.g., subtle changes in dynamics or rhythm.
 
