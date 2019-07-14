@@ -1,15 +1,69 @@
 # Amadeus
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A music generation and model compression project using PyTorch and [Distiller](https://nervanasystems.github.io/distiller/).
 
-## Musical Autocomplete
+## Repo Structure
+
+```
+.
+├── dataset/
+│   ├── midi/
+│   │   ├── dataset1/
+│   │   │   └── *.mid
+│   │   └── dataset2/
+│   │       └── *.mid
+│   ├── processed/
+│   │   └── dataset1/
+│   │       └── *.data (preprocess.py)
+│   └── scripts/
+│       └── *.sh (dataset download scripts)
+├── input/
+│   └── *.mid (generate.py)
+├── output/
+│   └── *.mid (generate.py)
+├── save/
+│   └── *.sess (train.py)
+├── stats/
+│   └── *.yaml (quantize.py)
+├── tests/
+│   └── *.py
+├── runs/ (tensorboard logdir)
+
+```
+
+
+## Amadeus
 
 Amadeus is a tool for musicians to break through creative blocks. Suppose you have a musical idea in mind, but you don't how to complete it. With Amadeus, you can connect a MIDI device (e.g., an electric keyboard) to your laptop or mobile device, play an input phrase of music, and hear the musical response of an AI trained on classical repertoire.
 
-Amadeus uses Performance RNN, a model for real-time music generation described in [this blog post](https://magenta.tensorflow.org/performance-rnn). Performance RNN was originally implemented in TensorFlow, but Amadeus is built upon a [PyTorch re-implementation](https://github.com/djosix/Performance-RNN-PyTorch). Amadeus uses a model compression technique known as [post-training weight quantization](https://nervanasystems.github.io/distiller/quantization.html) to shrink the size of the neural network with only a marginal loss in output quality.
+Amadeus creates music with Performance RNN, a model for real-time music generation. I use a model compression technique known as [post-training weight quantization](https://nervanasystems.github.io/distiller/quantization.html) to shrink the size of the original model by a factor of four with only a marginal loss in output quality.
 
 
-## Installation and Setup
+## Performance RNN
+
+Performance RNN is designed to capture the nuances of human musical performance and to generate musical output in real time. It uses a recurrent neural network (RNN) architecture known as gated recurrent units (GRUs) to model sequences of so-called "note events", of which there are four kinds:
+
+- Note-on events, which represent the start of a pitch,
+- Note-off events, which represent the end of a pitch,
+- Velocity events, which control the volume at which a pitch is played,
+- Time events, which move forward in time to the next note event.
+
+
+
+
+This representation of music has several advantages. First, it allows Performance RNN to model "polyphonic" music -- music in which more than one pitch is played at a single time. Second, it captures the nuances of musical performances, e.g., subtle changes in dynamics or rhythm.
+
+Performance RNN is trained on musical data in MIDI format. MIDI, which stands for "musical instrument digital interface", provides a lightweight representation of music and easily interfaces with digital instruments such as electric keyboards and electric guitars. Notable MIDI datasets for classical piano music include the [e-Piano Competition Dataset](http://www.piano-e-competition.com/) and the [MAESTRO Dataset](https://magenta.tensorflow.org/datasets/maestro) (use the scripts in `dataset/scripts/` for downloading these and other MIDI datasets).
+
+ Performance RNN was originally implemented in TensorFlow as a [Google Magenta project](https://magenta.tensorflow.org/performance-rnn), but Amadeus is built upon a [PyTorch re-implementation](https://github.com/djosix/Performance-RNN-PyTorch).
+
+## Post-Training Quantization
+
+
+
+## Installation
 
 The code in this repository currently requires a CUDA device to run. Clone this repository with
 
@@ -44,8 +98,6 @@ pip install -e .
 ```
 
 ## Usage
-
-This usage documentation is copied with modifications from the original repo.
 
 #### Download datasets
 
