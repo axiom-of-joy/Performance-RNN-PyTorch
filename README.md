@@ -5,7 +5,7 @@
 A music generation and model compression project using PyTorch and [Distiller](https://nervanasystems.github.io/distiller/).
 
 <p align="center">
-  <img src="images/music-score-piano-cropped.jpg" alt="Music score">
+  <img src="images/music-score-piano-cropped.jpg" width=1000 alt="Music score">
 </p>
 
 ## Repo Structure
@@ -55,6 +55,8 @@ Performance RNN is designed to capture the nuances of human musical performance 
 
 <p align="center">
   <img src="images/pianoroll.png" alt="Pianoroll">
+</p>
+<p align="center">
   <em>A visual representation of note events.</em>
 </p>
 
@@ -71,6 +73,8 @@ Post-training weight quantization is a model compression technique that leverage
 
 <p align="center">
   <img src="images/quantization.png" alt="Quantization">
+</p>
+<p align="center">
   <em>One possible mapping of 32-bit float weights into an integer range of length 2<sup>8</sup>.</em>
 </p>
 
@@ -80,10 +84,10 @@ Amadeus uses [Distiller](https://nervanasystems.github.io/distiller/), an open-s
 
 <p align="center">
   <img src="images/gru_key.png" alt="Quantization" width=400>
-  
+</p>
+<p align="center">
   <em>An illustrated gated recurrent unit (GRU). The pointwise addition and multiplication gates in the above figure are particularly sensitive to weight quantization.</em>
 </p>
-
 
 For further information on post-training quantization and other model compression techniques, the [Distiller docs](https://nervanasystems.github.io/distiller/quantization.html) provide an excellent introduction.
 
@@ -178,4 +182,4 @@ python3 generate.py -s save/test.sess -l 1000 -b 1 -i "input/input.midi"
 ```
 
 ## Acknowledgment
-I completed this project as an Artificial Intelligence Fellow at Insight Data Science. Many individuals contributed to the success of this project, but I owe a special thanks to program directors Amber Roberts and Matt Rubashkin, and especially to Ben Hammel for his generous help and advice.
+I completed this project as an Artificial Intelligence Fellow at Insight Data Science. Many individuals contributed to the success of this project, but I owe a special thanks to program directors Amber Roberts and Matt Rubashkin, and especially to my project mentor Ben Hammel for his generous help and advice.
