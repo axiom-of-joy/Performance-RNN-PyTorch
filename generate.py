@@ -98,12 +98,6 @@ if input_midi_file is not None:
     assert os.path.isfile(input_midi_file), f'"{input_midi_file}" is not a file'
     user_events, user_control = preprocess.preprocess_midi(input_midi_file)
 
-    print(user_events.shape)
-    print(user_control.shape)
-    print(type(user_events))
-    print(type(user_control))
-
-    print(input_midi_file)
 else:
     user_events = None
     user_control = None
