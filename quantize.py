@@ -102,7 +102,9 @@ class Quantizer:
         print("Collecting pre-quantization calibration statistics.")
 
         with collector_context(collector) as collector:
-            for iteration, (events, controls) in tqdm(enumerate(batch_gen)):
+            for iteration, (events, controls) in enumerate(batch_gen):
+                print(iteration)
+
                 # Break when desired number of batches are processed.
                 if iteration == self.num_batches:
                     break
@@ -173,4 +175,70 @@ class Quantizer:
         quantizer.prepare_model()
         quantizer.model.eval()
         return quantizer
+
+
+#-----------------------------------------------------------------------
+# Command line argument parser.
+#-----------------------------------------------------------------------
+
+def getopt():
+    parser = optparse.OptionParser()
+
+    parser.add_option('-s', '--session',
+                      dest='sess_path',
+                      type='string',
+                      default=None,
+                      help='session file containing the trained model')
+
+    parser.add_option('-d', '--dataset',
+                      dest='data_path',
+                      type='string',
+                      default=None)
+
+    parser.add_option('-q', '--stats-file',
+                      dest='stats_file',
+                      type='string',
+                      default=None,
+                      help='path to YAML file containing quantization stats')
+
+    return parser.parse_args()[0]
+
+
+#-----------------------------------------------------------------------
+# Main function (for collection of pre-quantization calibration stats)
+#-----------------------------------------------------------------------
+
+def main():
+    # Parse command line arguments.
+    opt = getopt()
+    sess_path = opt.sess_path
+    stats_file = opt.stats_file
+    data_path = opt.data_path
+    assert all([sess_path, stats_file, data_path])
+
+    # Load parameters from config.py.
+    batch_size = config.collect_quant_stats['batch_size']
+    window_size = config.collect_quant_stats['window_size']
+    stride_size = config.collect_quant_stats['stride_size']
+
+    # Load pre-trained model.
+    assert torch.cuda.is_available()
+    device = 'cuda:0'
+    state = torch.load(sess_path)
+    model = PerformanceRNN(**state['model_config']).to(device)
+    model.load_state_dict(state['model_state'])
+
+    # Load dataset.
+    dataset = Dataset(data_path, verbose=True)
+    dataset_size = len(dataset.samples)
+    assert dataset_size > 0
+    batch_gen = dataset.batches(batch_size, window_size, stride_size)
+
+    # Create quantizer and collect pre-quantization calibration statistics.
+    quantizer = Quantizer(model)
+    quantizer.collect_stats(stats_file, batch_gen)
+
+
+if __name__ == "__main__":
+    main()
 
