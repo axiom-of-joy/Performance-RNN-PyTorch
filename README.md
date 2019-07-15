@@ -182,4 +182,4 @@ python3 generate.py -s save/test.sess -l 1000 -b 1 -i "input/input.midi"
 ```
 
 ## Acknowledgment
-I completed this project as an Artificial Intelligence Fellow at Insight Data Science. Many individuals contributed to the success of this project, but I owe a special thanks to program directors Amber Roberts and Matt Rubashkin, and especially to my project mentor Ben Hammel for his generous help and advice.
+I completed this project as an Artificial Intelligence Fellow at Insight Data Science. Many individuals contributed to the success of this project, but I owe a special thanks to program directors Amber Roberts and Matt Rubashkin and to my project mentor Ben Hammel for their generous help and advice.
