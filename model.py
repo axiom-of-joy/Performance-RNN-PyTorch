@@ -1,3 +1,10 @@
+"""
+This script defines the Performance RNN class.
+
+The original generate method has been modified to enable music
+generation conditioned on user_events, a sequence of input Note Events.
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -102,8 +109,8 @@ class PerformanceRNN(nn.Module):
         return controls.repeat(steps, 1, 1)
     
     def generate(self, init, steps, events=None, controls=None, greedy=1.0,
-                 user_events=None,  # I added this argument.
-                 temperature=1.0, teacher_forcing_ratio=1.0, output_type='index', verbose=False):
+                 user_events=None, temperature=1.0, teacher_forcing_ratio=1.0,
+                 output_type='index', verbose=False):
         # init [batch_size, init_dim]
         # events [steps, batch_size] indeces
         # controls [1 or steps, batch_size, control_dim]
@@ -129,23 +136,16 @@ class PerformanceRNN(nn.Module):
         if verbose:
             step_iter = Bar('Generating').iter(step_iter)
 
-        # I added this stuff.
+        # Encode user_events prior to generating new output.
         if user_events is not None:
             user_events = torch.LongTensor(user_events).to(device)
-            #import pdb
-            #pdb.set_trace()
             control = None
             for i in range(user_events.shape[0]):
                 user_event = user_events[i].unsqueeze(0).unsqueeze(0)
                 output, hidden = self.forward(user_event, control, hidden)
-        # 
 
         for step in step_iter:
             control = controls[step].unsqueeze(0) if use_control else None
-            #FIXME
-            #import pdb
-            #pdb.set_trace()
-            #
             output, hidden = self.forward(event, control, hidden)
 
             use_greedy = np.random.random() < greedy
@@ -165,8 +165,6 @@ class PerformanceRNN(nn.Module):
                 if np.random.random() <= teacher_forcing_ratio:
                     event = events[step].unsqueeze(0)
         
-        # FIXME
-        print(type(outputs[0]))
         return torch.cat(outputs, 0)
 
     def beam_search(self, init, steps, beam_size, controls=None,
@@ -233,3 +231,8 @@ class PerformanceRNN(nn.Module):
         best = beam[torch.arange(batch_size).long(), score.argmax(-1)]
         best = best.contiguous().t()
         return best
+
+
+__author__ = "Yuankui Lee and Alexander Song"
+__credits__ = ["Yuankui Lee", "Alexander Song"]
+
