@@ -1,11 +1,11 @@
 """
-Original Author: Yuankui Lee
-Modified By: Alexander Song
-
 This script defines the Performance RNN class.
 
 The original generate method has been modified to enable music
 generation conditioned on user_events, a sequence of input Note Events.
+
+Author: Yuankui Lee
+Modified: Alexander Song
 """
 
 import torch

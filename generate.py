@@ -1,8 +1,18 @@
+"""
+This script generates output using a trained Performance RNN model.
+
+The original script has been modified to generated output conditioned on
+an input MIDI file containing a user's musical input.
+
+Author: Yuankui Lee
+Modified: Alexander Song
+"""
+
 import torch
 import numpy as np
 import os, sys, optparse
-
 import config, utils
+import preprocess
 from config import device, model as model_config
 from model import PerformanceRNN
 from sequence import EventSeq, Control, ControlSeq
@@ -70,7 +80,6 @@ def getopt():
                       action='store_true',
                       default=False)
     
-    # Distiller Begin.
     parser.add_option('-i', '--input-midi-file',
                       dest='input_midi_file',
                       type='string',
@@ -82,29 +91,10 @@ def getopt():
                       type='string',
                       default=None,
                       help='path to YAML file containing quantization stats')
-    # Distiller End.
 
     return parser.parse_args()[0]
 
-
 opt = getopt()
-
-
-# Distiller Begin.
-import preprocess
-
-input_midi_file = opt.input_midi_file
-if input_midi_file is not None:
-    assert os.path.isfile(input_midi_file), f'"{input_midi_file}" is not a file'
-    user_events, user_control = preprocess.preprocess_midi(input_midi_file)
-
-else:
-    user_events = None
-    user_control = None
-
-stats_file = opt.stats_file
-use_quantization = stats_file is not None
-# Distiller End.
 
 #------------------------------------------------------------------------
 
@@ -118,6 +108,20 @@ use_beam_search = opt.beam_size > 0
 beam_size = opt.beam_size
 temperature = opt.temperature
 init_zero = opt.init_zero
+
+# Check for input MIDI file.
+input_midi_file = opt.input_midi_file
+if input_midi_file is not None:
+    assert os.path.isfile(input_midi_file), f'"{input_midi_file}" is not a file'
+    user_events, user_control = preprocess.preprocess_midi(input_midi_file)
+
+else:
+    user_events = None
+    user_control = None
+
+# Check for quantization calibration stats file.
+stats_file = opt.stats_file
+use_quantization = stats_file is not None
 
 if use_beam_search:
     greedy_ratio = 'DISABLED'
@@ -172,6 +176,10 @@ print('Batch size:', batch_size)
 print('Max length:', max_len)
 print('Greedy ratio:', greedy_ratio)
 print('Beam size:', beam_size)
+print('Input MIDI file:', input_midi_file)
+print('Use Quantization:', use_quantization)
+if use_quantization:
+    print('Quantization Calibration Stats File:', stats_file)
 print('Output directory:', output_dir)
 print('Controls:', control)
 print('Temperature:', temperature)
@@ -187,13 +195,11 @@ state = torch.load(sess_path)
 model = PerformanceRNN(**state['model_config']).to(device)
 model.load_state_dict(state['model_state'])
 
-# Distiller begin.
+# Get quantized model.
 if use_quantization:
-    # Quantizer.model.
     Q = Quantizer(model)
     quantizer = Q.quantize(stats_file)
     model = quantizer.model.to(device)
-# Distiller end.
 
 model.eval()
 print(model)
@@ -211,12 +217,9 @@ with torch.no_grad():
                                     temperature=temperature,
                                     verbose=True)
     else:
-        outputs = model.generate(init, max_len,
-                                controls=controls,
-                                user_events=user_events if user_events is not None else None,   # Added.
-                                greedy=greedy_ratio,
-                                temperature=temperature,
-                                verbose=True)
+        outputs = model.generate(init, max_len, controls=controls,
+            user_events=user_events if user_events is not None else None,
+            greedy=greedy_ratio, temperature=temperature, verbose=True)
 
 outputs = outputs.cpu().numpy().T # [batch, steps]
 
@@ -228,10 +231,6 @@ outputs = outputs.cpu().numpy().T # [batch, steps]
 os.makedirs(output_dir, exist_ok=True)
 
 for i, output in enumerate(outputs):
-    # FIXME
-    #import pdb
-    #pdb.set_trace()
-    # FIXME
     name = f'output-{i:03d}.mid'
     path = os.path.join(output_dir, name)
     n_notes = utils.event_indeces_to_midi_file(output, path)

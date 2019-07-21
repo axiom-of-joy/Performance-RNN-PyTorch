@@ -1,6 +1,4 @@
 '''
-Author: Alexander Song
-
 This script defines a Quantizer class that may be used to quantize
 instances of PerformanceRNN. It requires that the forked Distiller repo
 at https://github.com/axiom-of-joy/distiller is cloned inside of the
@@ -9,6 +7,8 @@ for installation and set-up details).
 
 This script borrows from the example at
 https://github.com/NervanaSystems/distiller/blob/master/examples/word_language_model/quantize_lstm.ipynb.
+
+Author: Alexander Song
 '''
 
 import os
