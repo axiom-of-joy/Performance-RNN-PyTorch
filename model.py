@@ -1,4 +1,7 @@
 """
+Original Author: Yuankui Lee
+Modified By: Alexander Song
+
 This script defines the Performance RNN class.
 
 The original generate method has been modified to enable music
@@ -231,8 +234,4 @@ class PerformanceRNN(nn.Module):
         best = beam[torch.arange(batch_size).long(), score.argmax(-1)]
         best = best.contiguous().t()
         return best
-
-
-__author__ = "Yuankui Lee and Alexander Song"
-__credits__ = ["Yuankui Lee", "Alexander Song"]
 

@@ -1,4 +1,6 @@
 '''
+Author: Alexander Song
+
 This script defines a Quantizer class that may be used to quantize
 instances of PerformanceRNN. It requires that the forked Distiller repo
 at https://github.com/axiom-of-joy/distiller is cloned inside of the
