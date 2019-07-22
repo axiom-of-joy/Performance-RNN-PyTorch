@@ -1,3 +1,10 @@
+"""
+This script defines a Dataset object used for generating batches of
+data.
+
+Author: Yuankui Lee
+"""
+
 import os
 import torch
 import itertools, os

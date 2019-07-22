@@ -1,3 +1,12 @@
+"""
+A file containing configuration parameters.
+
+This script contains parameter values for the Performance RNN model,
+training, and quantization statistics collection.
+
+Author: Yuankui Lee, Alexander Song
+"""
+
 import torch
 from sequence import EventSeq, ControlSeq
 

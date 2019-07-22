@@ -1,3 +1,9 @@
+"""
+This script defines utility used in various other scripts.
+
+Author: Yuankui Lee
+"""
+
 import os
 import numpy as np
 from sequence import EventSeq, ControlSeq

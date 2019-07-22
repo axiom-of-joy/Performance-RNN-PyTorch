@@ -1,3 +1,9 @@
+"""
+This script is used for training an instance of Performance RNN.
+
+Author: Yuankui Lee
+"""
+
 import torch
 from torch import nn
 from torch import optim

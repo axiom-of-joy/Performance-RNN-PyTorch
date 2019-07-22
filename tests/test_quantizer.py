@@ -1,31 +1,39 @@
 '''
-This scripts tests the Quantizer class in quantize.py as well as the
-changes made in generate.py. To run all tests, use pytest with the verbose
-flag.
+This scripts tests the Quantizer class in quantize.py.
+
+Run tests with pytest -vv -s test_quantizer.py.
+
+Author: Alexander Song.
 '''
 
 # Add source folder to path.
 import sys
 sys.path.insert(0, '../')
-import quantize
-from quantize import Quantizer
-from model import PerformanceRNN
 import pudb
 import pytest
 import torch
-from distiller.quantization.range_linear import PostTrainLinearQuantizer
+import quantize
 import config
+from quantize import Quantizer
+from model import PerformanceRNN
 from data import Dataset
+from distiller.quantization.range_linear import PostTrainLinearQuantizer
 
 
 def test_quantize():
     '''
-    Tests Quantizer.quantize_method. This test uses specific 
+    Tests Quantizer.quantize method.
+
+    This test checks whether the output produced by the quantize method
+    of an instance of the Quantizer class is an instance of
+    PostTrainLinearQuantizer. The test requires that a quantization
+    statistics have been computed and stored in
+    stats/performance_rnn_pretrained_stats.yaml.
     '''
 
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
     sess_path = "../save/ecomp_w500.sess"
-    stats_file = "../performance_rnn_pretrained_stats.yaml"
+    stats_file = "../stats/performance_rnn_pretrained_stats.yaml"
 
     # Load from device.
     state = torch.load(sess_path)
@@ -41,7 +49,10 @@ def test_quantize():
 
 def test_quantizer_quant_stats_collect():
     '''
-    Tests Quantizer.quantize_method. This test requires that
+    Tests collection of quantization calibration statistics.
+
+    This test checks whether the quantizer successfully writes
+    quantization calibration statistics to file. It requires that
     ecomp_w500.sess is saved in the save/ folder.
     '''
     

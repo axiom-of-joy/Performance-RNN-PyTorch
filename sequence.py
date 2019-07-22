@@ -1,3 +1,9 @@
+"""
+This script defines the classes NoteSeq, EventSeq, and ControlSeq.
+
+Author: Yuankui Lee
+"""
+
 import numpy as np
 import copy, itertools, collections
 from pretty_midi import PrettyMIDI, Note, Instrument
