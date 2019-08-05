@@ -3,8 +3,7 @@ This script defines a Quantizer class that may be used to quantize
 instances of PerformanceRNN. It requires that the forked Distiller repo
 at https://github.com/axiom-of-joy/distiller is cloned inside of the
 amadeus project folder and installed in development mode (see README.md
-for installation and set-up details).
-
+for installation and set-up details).  
 This script borrows from the example at
 https://github.com/NervanaSystems/distiller/blob/master/examples/word_language_model/quantize_lstm.ipynb.
 
@@ -105,7 +104,8 @@ class Quantizer:
 
         with collector_context(collector) as collector:
             for iteration, (events, controls) in enumerate(batch_gen):
-                print(iteration)
+                print("Iteration: {:d} / {:d}".format(iteration,
+                                                      self.num_batches))
 
                 # Break when desired number of batches are processed.
                 if iteration == self.num_batches:
@@ -159,12 +159,30 @@ class Quantizer:
         # multiplication operations inside of instances of DistillerGRU are not
         # quantized but rather are carried out in half-precision. This has a
         # significant impact on the performance of the quantized model.
+#        output_fc.*:
+#            fp16: true
         overrides_yaml = """
+        inithid.*:
+            fp16: true
+        event_embedding:
+            fp16: true
+        concat_input.*:
+            fp16: true
         .*eltwise.*:
             fp16: true
-        output_fc_activation:
+        output_fc.*:
             fp16: true
         """
+#        overrides_yaml = """
+#        .*eltwise.*:
+#            fp16: true
+#        output_fc_activation:
+#            fp16: true
+#        """
+#        overrides_yaml = """
+#        .*eltwise.*:
+#            fp16: true
+#        """
         overrides = distiller.utils.yaml_ordered_load(overrides_yaml)
         quantizer = PostTrainLinearQuantizer(
             self.model,
@@ -177,7 +195,6 @@ class Quantizer:
         quantizer.prepare_model()
         quantizer.model.eval()
         return quantizer
-
 
 #-----------------------------------------------------------------------
 # Command line argument parser.
@@ -204,7 +221,6 @@ def getopt():
                       help='path to YAML file containing quantization stats')
 
     return parser.parse_args()[0]
-
 
 #-----------------------------------------------------------------------
 # Main function (for collection of pre-quantization calibration stats)

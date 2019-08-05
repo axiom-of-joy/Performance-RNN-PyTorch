@@ -5,7 +5,7 @@
 A music generation and model compression project using PyTorch and [Distiller](https://nervanasystems.github.io/distiller/).
 
 <p align="center">
-  <img src="images/music-score-piano-cropped.jpg" width=1000 alt="Music score">
+  <img src="media/music-score-piano-cropped.jpg" width=1000 alt="Music score">
 </p>
 
 ## Repo Structure
@@ -23,7 +23,7 @@ A music generation and model compression project using PyTorch and [Distiller](h
 │   │       └── *.data (preprocess.py)
 │   └── scripts/
 │       └── *.sh (dataset download scripts)
-├── images/
+├── media/
 │   └── *.png
 ├── input/
 │   └── *.mid (generate.py)
@@ -54,7 +54,7 @@ Performance RNN is designed to capture the nuances of human musical performance 
 - Time events, which move forward in time to the next note event.
 
 <p align="center">
-  <img src="images/pianoroll.png" alt="Pianoroll">
+  <img src="media/pianoroll.png" alt="Pianoroll">
 </p>
 <p align="center">
   <em>A visual representation of note events.</em>
@@ -72,7 +72,7 @@ Performance RNN was originally implemented in TensorFlow as a [Google Magenta pr
 Post-training weight quantization is a model compression technique that leverages pre-trained weights to produce a model of reduced size with a marginal loss in performance. The weights of a typical PyTorch tensor are 32-bit floats. In post-training quantization, we map pre-trained weights _x<sub>f</sub>_ into a specified integer range (e.g., between -2<sup>7</sup> and 2<sup>7</sup> - 1 in the graphic below) and then convert the weights to 8-bit integers. This reduces the model to 1/4 of the original size and also increases inference speed, since operations on 8-bit integers are faster than operations on 32-bit floats. In practice, 8-bits has been found to be the lowest precision that does not severely impact performance without re-training, although it is possible to use further techniques such as [quantization-aware training](https://nervanasystems.github.io/distiller/quantization.html#aggressive-quantization-int4-and-lower) to reduce the precision of the weights even further.
 
 <p align="center">
-  <img src="images/quantization.png" alt="Quantization">
+  <img src="media/quantization.png" alt="Quantization">
 </p>
 <p align="center">
   <em>One possible mapping of 32-bit float weights into an integer range of length 2<sup>8</sup>.</em>
@@ -83,7 +83,7 @@ To find an appropriate mapping from the original 32-bit float weights of a tenso
 Amadeus uses [Distiller](https://nervanasystems.github.io/distiller/), an open-source Python package for model compression, to quantize Performance RNN. At this time, Distiller does not support weight quantization of the gated recurrent units (GRUs) found in Performance RNN. To overcome this challenge, I built a sub-module within my [forked Distiller repository](https://github.com/axiom-of-joy/distiller) for quantizing GRUs (see the sub-module [here](https://github.com/axiom-of-joy/distiller/blob/master/distiller/modules/gru.py) and the tests [here](https://github.com/axiom-of-joy/distiller/blob/master/tests/test_gru.py)). An additional complication is that GRUs and other RNN architectures contain element-wise addition and multiplication gates that are particularly sensitive to weight quantization, as described in [this paper](https://arxiv.org/abs/1611.10176). To circumvent this issue, Amadeus does not quantize operations at these gates, but instead used half-precision operations (i.e., 16-bit floats).
 
 <p align="center">
-  <img src="images/gru_key.png" alt="Quantization" width=400>
+  <img src="media/gru_key.png" alt="Quantization" width=400>
 </p>
 <p align="center">
   <em>An illustrated gated recurrent unit (GRU). The pointwise addition and multiplication gates in the above figure are particularly sensitive to weight quantization.</em>

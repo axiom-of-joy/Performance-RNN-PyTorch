@@ -34,11 +34,12 @@ train = {
 }
 
 collect_quant_stats = {
-    'batch_size': 8,
-    'num_batches': 10,
-    'window_size': 200,
+    'batch_size': 2,
+    'num_batches': 1000,
+    'window_size': 500,
     'stride_size': 10,
     'use_transposition': False,
     'control_ratio': 1.0,
     'teacher_forcing_ratio': 1.0
 }
+
