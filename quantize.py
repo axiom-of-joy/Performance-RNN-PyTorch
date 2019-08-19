@@ -25,6 +25,7 @@ from distiller.modules.gru import convert_model_to_distiller_gru
 from distiller.data_loggers import QuantCalibrationStatsCollector
 from distiller.data_loggers import collector_context
 import config
+from config import device
 from model import PerformanceRNN
 from sequence import EventSeq, Control, ControlSeq
 from sequence import EventSeq
@@ -98,7 +99,6 @@ class Quantizer:
         # Set up pre-quantization calibration statistics collector.
         distiller.utils.assign_layer_fq_names(self.model)
         collector = QuantCalibrationStatsCollector(self.model)
-        device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
         print("Collecting pre-quantization calibration statistics.")
 
@@ -240,9 +240,7 @@ def main():
     stride_size = config.collect_quant_stats['stride_size']
 
     # Load pre-trained model.
-    assert torch.cuda.is_available()
-    device = 'cuda:0'
-    state = torch.load(sess_path)
+    state = torch.load(sess_path, map_location=device)
     model = PerformanceRNN(**state['model_config']).to(device)
     model.load_state_dict(state['model_state'])
 

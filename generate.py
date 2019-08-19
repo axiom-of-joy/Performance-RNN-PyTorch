@@ -136,7 +136,7 @@ if control is not None:
             files = list(utils.find_files_by_extensions(control))
             assert len(files) > 0, f'no file in "{control}"'
             control = np.random.choice(files)
-        _, compressed_controls = torch.load(control)
+        _, compressed_controls = torch.load(control, map_location=device)
         controls = ControlSeq.recover_compressed_array(compressed_controls)
         if max_len == 0:
             max_len = controls.shape[0]
@@ -191,7 +191,7 @@ print('-' * 70)
 # Generating
 #========================================================================
 
-state = torch.load(sess_path)
+state = torch.load(sess_path, map_location=device)
 model = PerformanceRNN(**state['model_config']).to(device)
 model.load_state_dict(state['model_state'])
 
